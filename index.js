@@ -29,12 +29,14 @@ function verifyJWT(req, res, next) {
     })
 }
 
+
 async function run() {
     try {
 
         const allUsers = client.db('edule').collection('users');
         const allTuitions = client.db('edule').collection('tuitions');
         const allApplicants = client.db('edule').collection('applicants');
+        const allconnects = client.db('edule').collection('connects');
 
 
         const verifyStudent = async (req, res, next) => {
@@ -64,15 +66,21 @@ async function run() {
             res.send(result);
         })
 
-        app.post('/tuitions', async (req, res) => {
+        app.post('/tuitions', verifyJWT, verifyStudent, async (req, res) => {
             const tuition = req.body;
             const result = await allTuitions.insertOne(tuition);
             res.send(result);
         });
 
-        app.post('/applicants', async (req, res) => {
+        app.post('/applicants', verifyJWT, verifyTutor, async (req, res) => {
             const applicants = req.body;
             const result = await allApplicants.insertOne(applicants);
+            res.send(result);
+        });
+
+        app.post('/connects', async (req, res) => {
+            const connects = req.body;
+            const result = await allconnects.insertOne(connects);
             res.send(result);
         });
 
@@ -109,13 +117,13 @@ async function run() {
             res.send(users);
         });
 
-        app.get('/tuitions', async (req, res) => {
+        app.get('/tuitions', verifyJWT, async (req, res) => {
             const query = {};
             const users = await allTuitions.find(query).toArray();
             res.send(users);
         });
 
-        app.get('/allApplications', async (req, res) => {
+        app.get('/allApplications', verifyJWT, async (req, res) => {
             const query = {};
             const users = await allApplicants.find(query).toArray();
             res.send(users);
@@ -128,7 +136,7 @@ async function run() {
             res.send(specificTuition);
         });
 
-        app.get('/myProfile', async (req, res) => {
+        app.get('/myProfile', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const query = {
                 email: email
@@ -145,58 +153,26 @@ async function run() {
             res.send(review);
         });
 
-        // app.get('/myReviews', async (req, res) => {
-        //     let query = {};
-
-        //     if (req.query.email) {
-        //         query = {
-        //             email: req.query.email
-        //         }
-        //     }
-        //     const cursor = allUsers.find(query);
-        //     const reviews = await cursor.toArray();
-        //     res.send(reviews);
-        // });
-
-
-        // UPDATE OPERATION 
-        // app.patch('/myProfileUpdate', async (req, res) => {
-        //     // const id = req.params.id;
-        //     // console.log(req.body);
-        //     // const userDetails = req.body;
-        //     // const query = { _id: new ObjectId(id) }
-        //     const email = req.query.email;
-        //     const query = {
-        //         email: email
-        //     }
-        //     const updatedDoc = {
-        //         $set: {
-        //             name: req.body.name
-        //         }
-        //     }
-        //     const result = await allUsers.updateMany(query, updatedDoc);
-        //     res.send(result);
-        // })
-
-
-        app.patch('/myProfileUpdate/:id', async (req, res) => {
-            const id = req.params.id;
-            console.log(req.body);
+        app.post('/myProfileUpdate/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = {
+                email: email
+            }
             const profile = req.body;
-            // console.log(profile)
-            const query = { _id: ObjectId(id) }
             const updatedDoc = {
                 $set: {
-                    name: profile.name
+                    name: profile.name,
+                    location: profile.location,
+                    phone: profile.phone,
+                    city: profile.city,
+                    study: profile.study
                 }
             }
             const result = await allUsers.updateOne(query, updatedDoc);
             res.send(result);
         })
     }
-    finally {
-
-    }
+    finally {}
 }
 
 run().catch(console.log())
