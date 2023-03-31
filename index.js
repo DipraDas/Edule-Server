@@ -72,9 +72,25 @@ async function run() {
             res.send(result);
         });
 
-        app.post('/applicants', verifyJWT, verifyTutor, async (req, res) => {
-            const applicants = req.body;
-            const result = await allApplicants.insertOne(applicants);
+        // app.post('/applicants', verifyJWT, verifyTutor, async (req, res) => {
+        //     const applicants = req.body;
+        //     const result = await allApplicants.insertOne(applicants);
+        //     res.send(result);
+        // });
+
+        app.post("/applicants", verifyJWT, verifyTutor, async (req, res) => {
+            const application = req.body;
+            const query = {
+                email: application.email,
+                subjectId: application.subjectId
+            }
+
+            const alreadyApplied = await allApplicants.find(query).toArray();
+            if (alreadyApplied.length) {
+                const message = `You have already applied`
+                return res.send({ acknowledged: false, message })
+            }
+            const result = await allApplicants.insertOne(application);
             res.send(result);
         });
 
@@ -172,7 +188,7 @@ async function run() {
             res.send(result);
         })
     }
-    finally {}
+    finally { }
 }
 
 run().catch(console.log())
